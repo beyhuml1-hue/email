@@ -1,0 +1,34 @@
+name: Import TidalMail source
+on:
+  push:
+    paths:
+      - '.source/tidalmail-source.tar.xz'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Verify and extract bundled source
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "83fd1d43814f84a3b97869e7ecf0939c174c13af910f7ee22f513c70f0b349ad  .source/tidalmail-source.tar.xz" | sha256sum --check
+          tar -xJf .source/tidalmail-source.tar.xz
+          test -f backend/server.mjs
+          test -f cloudflare-pages/functions/_middleware.js
+      - name: Commit the actual source files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backend cloudflare-pages cloudflare-worker SETUP.md
+          if ! git diff --staged --quiet; then
+            git commit -m "Import TidalMail website and email backend"
+            git push
+          fi
