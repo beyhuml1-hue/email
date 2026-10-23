@@ -2,7 +2,7 @@ name: Import TidalMail source
 on:
   push:
     paths:
-      - '.source/tidalmail-source.tar.xz'
+      - '.source/READY'
   workflow_dispatch:
 permissions:
   contents: write
@@ -17,11 +17,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo "83fd1d43814f84a3b97869e7ecf0939c174c13af910f7ee22f513c70f0b349ad  .source/tidalmail-source.tar.xz" | sha256sum --check
-          tar -xJf .source/tidalmail-source.tar.xz
+          cat .source/part*.b64 | base64 --decode > /tmp/tidalmail-source.tar.xz
+          echo "83fd1d43814f84a3b97869e7ecf0939c174c13af910f7ee22f513c70f0b349ad  /tmp/tidalmail-source.tar.xz" | sha256sum --check
+          tar -xJf /tmp/tidalmail-source.tar.xz
           test -f backend/server.mjs
           test -f cloudflare-pages/functions/_middleware.js
-      - name: Commit the actual source files
+      - name: Commit source folders
         shell: bash
         run: |
           set -euo pipefail
