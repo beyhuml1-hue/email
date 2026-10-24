@@ -13,6 +13,8 @@ A custom private email inbox website for **lb000.xyz**, styled with an underwate
 
 ## Deployment at a glance
 
+For the existing Cloudflare Worker **`email`**, connect this repository's `main` branch and use repository root `/` with deploy command `npx wrangler deploy`. The root `wrangler.jsonc` deploys the sign-in website assets to that existing Worker. Set `BACKEND_ORIGIN` in its runtime settings to your deployed backend's HTTPS URL; displaying the website alone does not configure live mail reception.
+
 1. **Railway**: Deploy this GitHub repo with root directory **`/backend`**, run `npm start` and mount a **persistent volume at `/data`**.
 2. In Railway's **Variables**, set `NODE_ENV=production`, `MAIL_DOMAIN=lb000.xyz` (or an inbound subdomain), `PUBLIC_ORIGIN=https://email.lb000.xyz`, `DB_PATH=/data/tidalmail.sqlite`, and the **private** `RESEND_API_KEY` and `RESEND_WEBHOOK_SECRET`. Set no real secrets in GitHub files.
 3. **Cloudflare Pages**: Deploy `/cloudflare-pages` as the root directory with static output **`public`**. Set the runtime `BACKEND_ORIGIN` variable to Railway's actual HTTPS service URL. Attach `email.lb000.xyz` only if it isn't already attached to another project.

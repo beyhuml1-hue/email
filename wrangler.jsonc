@@ -1,0 +1,10 @@
+{
+  "name": "email",
+  "main": "./cloudflare-worker/src/index.js",
+  "compatibility_date": "2026-10-23",
+  "assets": {
+    "directory": "./cloudflare-worker/public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*", "/webhooks/resend", "/healthz"]
+  }
+}
