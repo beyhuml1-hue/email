@@ -2,6 +2,8 @@
 
 A custom private email inbox website for **lb000.xyz**, styled with an underwater theme. This repository includes the complete frontend and a receiving-email backend.
 
+The underwater scene is rendered live with native WebGL: voxel coral, a tiled seabed, swimming fish, swaying seaweed, a rotating conduit core, rising bubbles and mouse-controlled camera movement. It uses no scene images, model downloads or rendering dependencies. Motion pauses in hidden tabs and respects reduced-motion preferences. The scene requires WebGL; the sign-in form stays usable without it.
+
 **Status:** Source code uploaded to GitHub. **Not yet deployed/configured for live email.**
 
 ## Project folders

@@ -29,7 +29,7 @@
 
     /* Reference layout: 1912 x 942 desktop, with a responsive stacked form. */
     body{font-family:Arial,Helvetica,sans-serif;background:#70b5c8}
-    .ocean{min-height:100svh;background:#70b5c8 url('/ocean-background.png') center center/cover no-repeat}
+    .ocean{min-height:100svh;background:transparent}
     .ocean:before,.ocean:after,.light-rays,.bubbles,.floor,.terrain{display:none}
     .site-header{position:absolute;inset:0 0 auto;padding:14px 40px 0 43px;align-items:center;height:52px;z-index:5}
     .brand{font-size:0;text-shadow:none;gap:0}.logo{width:35px;height:36px;border-width:4px;border-radius:9px;box-shadow:0 0 21px #66f2dc54,inset 3px 3px #c6fff5;background:linear-gradient(135deg,#43b6cc,#2686ab 49%,#1d6b82 50%)}
@@ -59,8 +59,8 @@
     @media(max-width:900px){.site-header{padding:16px 24px;height:60px}.landing{width:calc(100% - 48px);padding:110px 0 65px;min-height:100svh;grid-template-columns:1fr;gap:36px;max-width:600px}.hero h1{font-size:clamp(58px,9.2vw,84px);letter-spacing:-2.5px;margin:20px 0 24px}.hero h2{font-size:18px}.hero p{font-size:17px;line-height:26px}.hero p br{display:none}.chips{margin-top:20px;gap:7px}.chips span{font-size:12px;padding:8px 11px}.auth-card{justify-self:center;width:min(440px,100%);padding:32px 25px 24px;min-height:440px}.auth-card .sub{white-space:normal;font-size:13px}.hero{width:100%}.ocean{background-attachment:fixed;background-position:48% center}.language{display:inline-flex;font-size:12px}.brand{font-size:0}}
     @media(max-width:480px){.landing{width:calc(100% - 36px);padding-top:96px;gap:30px}.hero h1{font-size:56px;line-height:1.02}.hero h2{font-size:16px}.hero p{font-size:15px;line-height:24px}.auth-card{padding-left:22px;padding-right:22px}.auth-top>.logo{right:21px;top:22px}.auth-card h2{font-size:30px}.chips span{font-size:11px;padding:8px 10px}.status{font-size:12px}.site-header{padding-left:22px;padding-right:20px}}
 
-    .ocean{background:none;background-color:#7fb5c0;isolation:isolate}
-    .ocean:before{display:block;position:fixed;z-index:0;inset:-18px;pointer-events:none;background:#70b5c8 url('/ocean-background.png') center center/cover no-repeat;transform:translate3d(var(--water-x,0px),var(--water-y,0px),0);filter:saturate(.76) brightness(.98);opacity:1;will-change:transform}
+    .ocean{background:linear-gradient(180deg,#8bcbd8 0%,#4aaed0 25%,#278bb7 47%,#8eb1b3 76%,#adb39a 100%);isolation:isolate}
+    .ocean:before{display:block;position:fixed;z-index:0;inset:-18px;pointer-events:none;background:transparent;transform:translate3d(var(--water-x,0px),var(--water-y,0px),0);filter:saturate(.76) brightness(.98);opacity:1;will-change:transform}
     .ocean:after{display:block;position:fixed;inset:0;z-index:0;background:linear-gradient(180deg,#c3d8c620,#77939314 48%,#344b5030);pointer-events:none}
     #ocean-motion{position:fixed;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
     .hero h1{font-family:'Times New Roman',Times,serif;letter-spacing:-3.8px;font-weight:400}
@@ -69,6 +69,9 @@
     .logo{animation:conduit-pulse 5s ease-in-out infinite}
     @keyframes conduit-pulse{0%,100%{box-shadow:0 0 18px #66f2dc40,inset 3px 3px #c6fff5}50%{box-shadow:0 0 30px #66f2dc80,inset 3px 3px #c6fff5}}
     @media(prefers-reduced-motion:reduce){.ocean:before{transform:none;will-change:auto}.auth-card{transform:none}.logo{animation:none}}
+    #water-ripples{position:fixed;inset:0;z-index:1;width:100%;height:100%;pointer-events:none}
+    .ocean:before{display:none}.ocean:after{z-index:1;background:linear-gradient(180deg,#d5eff308,transparent 50%,#7c9c8b12)}
+    .auth-card{backdrop-filter:none;background:#eee9ddf2}
   </style>
 </head>
 <body>
