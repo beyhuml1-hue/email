@@ -5,6 +5,21 @@
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*", "/webhooks/resend", "/healthz"]
+    "run_worker_first": [
+      "/api/*",
+      "/webhooks/resend",
+      "/healthz",
+      "/reef-control"
+    ]
+  },
+  "d1_databases": [
+    {
+      "database_name": "tidalmail-email",
+      "database_id": "057685f4-28a2-43b1-b886-ed100c754af4",
+      "binding": "DB"
+    }
+  ],
+  "vars": {
+    "MAIL_DOMAIN": "lb000.xyz"
   }
 }

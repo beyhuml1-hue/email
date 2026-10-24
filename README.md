@@ -1,55 +1,41 @@
-# TidalMail 🌊
+# TidalMail
 
-A custom private email inbox website for **lb000.xyz**, styled with an underwater theme. This repository includes the complete frontend and a receiving-email backend.
+A private mail site at https://email.lb000.xyz with eight animated WebGL biome styles, a three-column inbox, and server-protected mailbox administration.
 
-The underwater scene is rendered live with native WebGL: voxel coral, a tiled seabed, swimming fish, swaying seaweed, a rotating conduit core, rising bubbles and mouse-controlled camera movement. It uses no scene images, model downloads or rendering dependencies. Motion pauses in hidden tabs and respects reduced-motion preferences. The scene requires WebGL; the sign-in form stays usable without it.
+## Current Cloudflare Worker architecture
 
-**Status:** Source code uploaded to GitHub. **Not yet deployed/configured for live email.**
+- Root `wrangler.jsonc` deploys the existing `email` Worker and its static assets.
+- The `DB` D1 binding stores mailbox password hashes, sessions, incoming messages and the global website style.
+- `ADMIN_CODE` must be set as a private Cloudflare runtime secret. Never put real codes, passwords or tokens in source control.
+- The admin console has a separate entry URL with no public navigation links. Access still requires the server-verified admin code and a short-lived HttpOnly cookie.
+- Admins can generate mailboxes and passwords, browse all inboxes, trash/restore messages, revoke sessions, reset passwords, suspend/reactivate mailboxes and change the style for all visitors.
+- Incoming email is processed by the Worker's native `email` handler using postal-mime. Configure Cloudflare Email Routing for the receiving domain, then route its catch-all to the `email` Worker. Unknown and suspended recipients are rejected.
+- Existing MX records must be inspected before enabling or changing routing. Keep any specific routing rules needed by other services.
+- No public signup, outgoing email or attachment viewing. Forwarding is explicitly shown as unavailable.
 
-## Project folders
+## Create an email with the bot
 
-- [cloudflare-pages/](cloudflare-pages/) — Cloudflare Pages UI and same-origin proxy.
-- [cloudflare-worker/](cloudflare-worker/) — alternative Worker frontend/proxy. Choose this **or** Pages.
-- [backend/](backend/) — Node.js 22+ / SQLite private mailboxes, login, messages and signed Resend inbound webhooks.
-- [SETUP.md](SETUP.md) — full instructions for Cloudflare DNS, Railway, Resend and testing.
-
-## Deployment at a glance
-
-For the existing Cloudflare Worker **`email`**, connect this repository's `main` branch and use repository root `/` with deploy command `npx wrangler deploy`. The root `wrangler.jsonc` deploys the sign-in website assets to that existing Worker. Set `BACKEND_ORIGIN` in its runtime settings to your deployed backend's HTTPS URL; displaying the website alone does not configure live mail reception.
-
-1. **Railway**: Deploy this GitHub repo with root directory **`/backend`**, run `npm start` and mount a **persistent volume at `/data`**.
-2. In Railway's **Variables**, set `NODE_ENV=production`, `MAIL_DOMAIN=lb000.xyz` (or an inbound subdomain), `PUBLIC_ORIGIN=https://email.lb000.xyz`, `DB_PATH=/data/tidalmail.sqlite`, and the **private** `RESEND_API_KEY` and `RESEND_WEBHOOK_SECRET`. Set no real secrets in GitHub files.
-3. **Cloudflare Pages**: Deploy `/cloudflare-pages` as the root directory with static output **`public`**. Set the runtime `BACKEND_ORIGIN` variable to Railway's actual HTTPS service URL. Attach `email.lb000.xyz` only if it isn't already attached to another project.
-4. **Cloudflare DNS / Resend**: Verify the receiving domain and use **exactly** the MX and verification records from Resend. **Do not replace existing MX records** used by another mail provider; use a receiving subdomain instead if needed.
-5. Configure the signed `email.received` webhook to `https://email.lb000.xyz/webhooks/resend`.
-6. Create your first mailbox on the Railway backend with `npm run add-mailbox -- player@lb000.xyz` (or the chosen receiving subdomain) and test delivery from an outside email account.
-
-Full detail, troubleshooting and security notes: **[SETUP.md](SETUP.md)**.
-
-## Automatic email creation bot
-
-The website has **sign in only**. Create mailbox logins using the bot on the backend server (with its persistent `DB_PATH` and receiving `MAIL_DOMAIN` configured):
+From the repository root, install Node.js 24+, run `npm ci`, and configure `ADMIN_CODE` in a private environment or ignored `.env` file. `MAIL_SITE_ORIGIN` defaults to the website above.
 
 ```bash
-cd backend
 npm run bot
 # Or choose the name:
 npm run bot -- player
 ```
 
-It creates one mailbox automatically, generates a secure password, and displays the email, password and sign-in URL. Save those details privately and use them on the sign-in page. On Windows, `backend/CREATE-EMAIL.cmd` runs the same bot. For machine-readable output run `node scripts/auto-mailbox.mjs --json`.
+The bot creates an account on the deployed site and displays its generated email and password once. It does not store or commit credentials.
 
-Run this against the **same database as the deployed backend**. Running it on your PC creates a local mailbox, not a mailbox on Railway. Mail reception still needs Resend and DNS configured as described in SETUP.md. The bot never overwrites existing mailboxes and provides no public signup endpoint.
-
-## Local backend test
+## Tests
 
 ```bash
-cd backend
+npm ci
 npm test
 ```
 
-## Important
+Tests cover server-side admin authentication, site-wide style settings, mailbox provisioning, message ownership, session revocation, password changes and real MIME stream decoding with duplicate protection. Fixture emails are test-only and are never deployed as user messages.
 
-- Receiving real email requires successful domain verification, backend deployment, secure mailbox creation, and an active Resend webhook. GitHub alone doesn't receive mail.
-- This is a starter for private inboxes, not a production-hardened mass public disposable-email service. No outgoing mail, attachments, public signup, password recovery or MFA.
-- Never commit real `.env` files, live keys or passwords to this repository. Since this repository is **public**, review its visibility before adding sensitive changes.
+## Alternative backend
+
+`backend/` retains the earlier Node/SQLite + Resend backend and its separate tests (`npm test --prefix backend`). `cloudflare-pages/` retains the alternative Pages frontend. The live Worker uses native D1 when `BACKEND_ORIGIN` is absent. Setting `BACKEND_ORIGIN` opts back into the legacy backend and does not migrate its database.
+
+No service can guarantee that Microsoft, ChatGPT or every other website accepts a particular email domain. Incoming delivery and site acceptance are separate checks.

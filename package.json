@@ -1,0 +1,1 @@
+{"name":"tidalmail-worker","private":true,"type":"module","scripts":{"test":"node --test cloudflare-worker/tests/*.test.mjs","deploy":"npx wrangler deploy","bot":"node --use-system-ca scripts/create-email.mjs"},"dependencies":{"postal-mime":"4.1.4"}}
