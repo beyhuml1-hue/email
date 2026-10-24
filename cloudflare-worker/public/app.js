@@ -151,11 +151,11 @@ $('signin-form').addEventListener('submit',async e=>{
     const data=await api('/api/login',{method:'POST',body:JSON.stringify({email:$('email').value.trim(),password:$('password').value})});
     showInbox(data.mailbox);
   } catch(err) {$('error').textContent=err.message;}
-  finally {button.disabled=false;button.textContent='Sign in →';}
+  finally {button.disabled=false;button.textContent='Sign in';}
 });
 $('toggle-pass').addEventListener('click',()=>{
   const p=$('password');p.type=p.type==='password'?'text':'password';
-  $('toggle-pass').textContent=p.type==='password'?'Show':'Hide';
+  $('toggle-pass').setAttribute('aria-label',p.type==='password'?'Show password':'Hide password');
 });
 async function logout(){
   try {await api('/api/logout',{method:'POST'});} catch {}

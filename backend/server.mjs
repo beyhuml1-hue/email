@@ -134,6 +134,8 @@ const server = createServer(async (req, res) => {
     if (path === '/webhooks/resend' && req.method === 'POST') return await handleInbound(req,res);
     if (path === '/' && req.method === 'GET') { res.writeHead(200,{'content-type':'text/html; charset=utf-8','cache-control':'no-cache'}); return res.end(site); }
     if (path === '/app.js' && req.method === 'GET') { res.writeHead(200,{'content-type':'text/javascript; charset=utf-8','cache-control':'no-cache'}); return res.end(script); }
+    if (path === '/ocean.js' && req.method === 'GET') { res.writeHead(200,{'content-type':'text/javascript; charset=utf-8','cache-control':'no-cache'}); return res.end(readFileSync(join(base,'ocean.js'))); }
+    if (path === '/ocean-background.png' && req.method === 'GET') { res.writeHead(200,{'content-type':'image/png','cache-control':'public, max-age=3600'}); return res.end(readFileSync(join(base,'ocean-background.png'))); }
     if (path === '/api/session' && req.method === 'GET') { const u = getAuth(req); return json(res,200,{ mailbox: u?.email || null }); }
     if (!path.startsWith('/api/')) return text(res,404,'Not found');
     if (['POST','PATCH','DELETE'].includes(req.method) && (!checkOrigin(req) || (path !== '/api/logout' && !(req.headers['content-type'] || '').startsWith('application/json')))) return json(res,403,{error:'Request not allowed'});
