@@ -6,6 +6,7 @@ import { randomBytes, createHmac } from 'node:crypto';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { once } from 'node:events';
 
 const dir = mkdtempSync(join(tmpdir(),'tidalmail-'));
 const cwd=process.cwd();
@@ -26,17 +27,18 @@ async function waitForApp(port) {
 function runNode(args,env,input) {
   return new Promise((resolve,reject)=>{
     const c=spawn('node',args,{cwd,env,stdio:['pipe','pipe','pipe']});
-    let err=''; c.stderr.on('data',b=>err+=b);
+    let err='',out=''; c.stderr.on('data',b=>err+=b); c.stdout.on('data',b=>out+=b);
     c.stdin.end(input);
-    c.on('exit',code=>code===0?resolve():reject(new Error(err)));
+    c.on('error',reject);
+    c.on('exit',code=>code===0?resolve(out):reject(new Error(err)));
   });
 }
 let origin,sec;
 async function request(path,options={}) {
   return fetch(origin+path,{...options,headers:{...(options.body ? {'content-type':'application/json'}:{}),...(options.headers||{})}});
 }
-async function authUser(email) {
-  const result=await request('/api/login',{method:'POST',body:JSON.stringify({email,password:pw})});
+async function authUser(email,password=pw) {
+  const result=await request('/api/login',{method:'POST',body:JSON.stringify({email,password})});
   assert.equal(result.status,200);
   return result.headers.get('set-cookie').split(';')[0];
 }
@@ -50,6 +52,12 @@ test('signed live receiving -> each private mailbox -> JSON APIs',async () => {
   const env={...process.env, DB_PATH:join(dir,'test.sqlite'), MAIL_DOMAIN:'example.com',NODE_ENV:'test',RESEND_API_KEY:'re_testing',RESEND_WEBHOOK_SECRET:whsec,TEST_RESEND_API_BASE:`http://127.0.0.1:${mockPort}`};
   try {
     for (const email of recipients) await runNode(['scripts/create-mailbox.mjs',email],env,pw+'\n');
+    const generated=JSON.parse(await runNode(['scripts/auto-mailbox.mjs','--json'],env));
+    assert.match(generated.email,/^inbox-[a-f0-9]{16}@example\.com$/);
+    assert.ok(generated.password.length>=32);
+    await assert.rejects(runNode(['scripts/auto-mailbox.mjs',generated.email.split('@')[0],'--json'],env),/already exists/);
+    await assert.rejects(runNode(['scripts/auto-mailbox.mjs','--json'],{...env,MAIL_DOMAIN:''}),/Set MAIL_DOMAIN/);
+    await assert.rejects(runNode(['scripts/auto-mailbox.mjs','other@foreign.example','--json'],env),/mailbox name/);
     const port=39180+Math.floor(Math.random()*2000);
     origin=`http://127.0.0.1:${port}`;
     env.PORT=String(port); env.PUBLIC_ORIGIN=origin;
@@ -57,7 +65,7 @@ test('signed live receiving -> each private mailbox -> JSON APIs',async () => {
     await waitForApp(port);
     const unauthorized=await request('/api/messages'); assert.equal(unauthorized.status,401);
     const unverified=await request('/webhooks/resend',{method:'POST',body:JSON.stringify({type:'email.received'})});assert.equal(unverified.status,401);
-    const data={type:'email.received',data:{email_id:'test-email-100',to:recipients,from:'noreply@example.org',subject:'Your code'}};
+    const data={type:'email.received',data:{email_id:'test-email-100',to:[...recipients,generated.email],from:'noreply@example.org',subject:'Your code'}};
     const raw=JSON.stringify(data),timestamp=String(Math.floor(Date.now()/1000)),id='event-1';
     const signature=createHmac('sha256',key).update(`${id}.${timestamp}.${raw}`).digest('base64');
     const headers={'content-type':'application/json','svix-id':id,'svix-timestamp':timestamp,'svix-signature':'v1,'+signature};
@@ -65,8 +73,8 @@ test('signed live receiving -> each private mailbox -> JSON APIs',async () => {
     assert.equal(incoming.status,200,await incoming.text());
     // Resend may retry webhook messages: duplicates must not show in the inbox.
     const duplicate=await request('/webhooks/resend',{method:'POST',headers,body:raw}); assert.equal(duplicate.status,200);
-    for (const email of recipients) {
-      const cookie=await authUser(email);
+    for (const email of [...recipients,generated.email]) {
+      const cookie=await authUser(email,email===generated.email?generated.password:pw);
       const inbox=await request('/api/messages',{headers:{cookie}});
       const {messages}=await inbox.json();
       assert.equal(messages.length,1);
@@ -78,5 +86,12 @@ test('signed live receiving -> each private mailbox -> JSON APIs',async () => {
       const folder=await request('/api/messages?folder=starred',{headers:{cookie}});
       assert.equal((await folder.json()).messages.length,1);
     }
-  } finally { app?.kill();await new Promise(r=>mock.close(r));rmSync(dir,{force:true,recursive:true}); }
+  } finally {
+    if (app && app.exitCode === null && app.signalCode === null) {
+      const stopped=once(app,'exit'); app.kill(); await stopped;
+    }
+    await new Promise(r=>mock.close(r));
+    assert.ok(dir.startsWith(join(tmpdir(),'tidalmail-')));
+    rmSync(dir,{force:true,recursive:true,maxRetries:5,retryDelay:100});
+  }
 });

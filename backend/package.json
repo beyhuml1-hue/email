@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node server.mjs",
     "add-mailbox": "node scripts/create-mailbox.mjs",
+    "bot": "node scripts/auto-mailbox.mjs",
     "test": "node --test tests/*.test.mjs"
   }
 }
